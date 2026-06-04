@@ -42,15 +42,33 @@ window.EL_ZAHRA_APP = {
         }
     },
 
-    // 1. ROUTAGE ET LANGUES (URL HASH-BASED ROUTING: #/ar ou #/fr)
+    // 1. ROUTAGE ET LANGUES (URL HASH-BASED ROUTING: #/ar, #/fr ou #/en)
     setupRouter: function() {
         const handleHashChange = () => {
             const hash = window.location.hash;
-            if (hash === "#/fr") {
-                this.currentLang = "fr";
+            const supportedLangs = ["ar", "fr", "en"];
+            const hashLang = hash.replace("#/", "");
+            
+            if (supportedLangs.includes(hashLang)) {
+                this.currentLang = hashLang;
+                localStorage.setItem("selected_language", hashLang);
             } else {
-                this.currentLang = "ar";
-                window.location.hash = "#/ar"; // Redirection par défaut
+                // Si pas de hash ou invalide, vérifier localStorage
+                const savedLang = localStorage.getItem("selected_language");
+                if (savedLang && supportedLangs.includes(savedLang)) {
+                    this.currentLang = savedLang;
+                    window.location.hash = "#/" + savedLang;
+                    return;
+                }
+                
+                // Si premiere visite, détecter la langue du navigateur
+                const browserLang = (navigator.language || navigator.userLanguage || "ar").slice(0, 2);
+                const defaultLang = supportedLangs.includes(browserLang) ? browserLang : "ar";
+                
+                this.currentLang = defaultLang;
+                localStorage.setItem("selected_language", defaultLang);
+                window.location.hash = "#/" + defaultLang;
+                return;
             }
             this.applyLanguage();
         };
@@ -70,17 +88,32 @@ window.EL_ZAHRA_APP = {
             if (langData[key]) {
                 if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
                     el.placeholder = langData[key];
+                } else if (el.tagName === "META") {
+                    el.setAttribute("content", langData[key]);
                 } else {
                     el.innerHTML = langData[key];
                 }
             }
         });
 
-        // Mettre à jour l'étiquette de langue de la barre de navigation
-        const langToggleLabel = document.getElementById("lang-toggle-label");
-        if (langToggleLabel) {
-            langToggleLabel.innerText = this.currentLang === "ar" ? "Français" : "العربية";
-        }
+        // Mettre à jour le sélecteur de langue dropdown
+        const flags = { ar: "🇩🇿", en: "🇺🇸", fr: "🇫🇷" };
+        const names = { ar: "العربية", en: "English", fr: "Français" };
+        
+        const activeFlag = document.getElementById("active-lang-flag");
+        const activeText = document.getElementById("active-lang-text");
+        if (activeFlag) activeFlag.innerText = flags[this.currentLang];
+        if (activeText) activeText.innerText = names[this.currentLang];
+
+        // Mettre à jour l'état actif dans les items du menu dropdown
+        document.querySelectorAll(".lang-dropdown-item").forEach(item => {
+            const itemLang = item.getAttribute("data-lang");
+            if (itemLang === this.currentLang) {
+                item.classList.add("active");
+            } else {
+                item.classList.remove("active");
+            }
+        });
 
         // Re-rendre les listes dynamiques pour appliquer la langue
         this.renderServices();
@@ -134,12 +167,31 @@ window.EL_ZAHRA_APP = {
 
     // 3. ECOUTEURS D'ÉVÉNEMENTS
     setupEventListeners: function() {
-        // Toggle de langue
-        const langToggle = document.getElementById("lang-toggle");
-        if (langToggle) {
-            langToggle.addEventListener("click", () => {
-                const targetHash = this.currentLang === "ar" ? "#/fr" : "#/ar";
-                window.location.hash = targetHash;
+        // Language Dropdown Selector toggle and click outside close
+        const langDropdownBtn = document.getElementById("lang-dropdown-btn");
+        const langDropdown = document.getElementById("lang-dropdown");
+        const langDropdownMenu = document.getElementById("lang-dropdown-menu");
+        
+        if (langDropdownBtn && langDropdownMenu) {
+            langDropdownBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                langDropdown.classList.toggle("active");
+                langDropdownMenu.classList.toggle("show");
+            });
+
+            document.addEventListener("click", (e) => {
+                if (langDropdown && !langDropdown.contains(e.target)) {
+                    langDropdown.classList.remove("active");
+                    langDropdownMenu.classList.remove("show");
+                }
+            });
+            
+            // Close dropdown when selecting language
+            document.querySelectorAll(".lang-dropdown-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    langDropdown.classList.remove("active");
+                    langDropdownMenu.classList.remove("show");
+                });
             });
         }
 
@@ -165,6 +217,7 @@ window.EL_ZAHRA_APP = {
         if (navToggle) {
             navToggle.addEventListener("click", () => {
                 navLinks.classList.toggle("active");
+                navToggle.classList.toggle("active");
             });
         }
 
@@ -172,6 +225,9 @@ window.EL_ZAHRA_APP = {
         document.querySelectorAll(".nav-links a").forEach(link => {
             link.addEventListener("click", () => {
                 navLinks.classList.remove("active");
+                if (navToggle) {
+                    navToggle.classList.remove("active");
+                }
             });
         });
 
@@ -267,10 +323,10 @@ window.EL_ZAHRA_APP = {
                     <p>${desc}</p>
                     <div class="service-card-footer">
                         <span class="read-more-btn" onclick="window.EL_ZAHRA_APP.openServiceDetails('${serv.id}')">
-                            <span data-i18n="btn_details">${this.currentLang === "ar" ? "التفاصيل الطبية" : "Détails Médicaux"}</span>
+                            <span data-i18n="btn_details">${window.EL_ZAHRA_DATA.translations[this.currentLang].btn_details}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path d="M16.172 11l-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z"/></svg>
                         </span>
-                        <button class="service-reserve-mini" onclick="window.EL_ZAHRA_APP.prefillBooking('${serv.id}')" title="${this.currentLang === "ar" ? "حجز" : "Réserver"}">
+                        <button class="service-reserve-mini" onclick="window.EL_ZAHRA_APP.prefillBooking('${serv.id}')" title="${this.currentLang === 'ar' ? 'حجز موعد' : (this.currentLang === 'en' ? 'Book' : 'Réserver')}">
                             📅
                         </button>
                     </div>
@@ -301,8 +357,8 @@ window.EL_ZAHRA_APP = {
         descEl.innerText = serv.fullDescription[this.currentLang];
 
         // Mettre à jour l'intitulé de la section avantages
-        document.getElementById("modal-advantages-title").innerText = this.currentLang === "ar" ? "مزايا العلاج في عيادتنا :" : "Avantages du traitement :";
-        document.getElementById("modal-faq-title").innerText = this.currentLang === "ar" ? "الأسئلة الشائعة حول العلاج :" : "FAQ spécifiques :";
+        document.getElementById("modal-advantages-title").innerText = window.EL_ZAHRA_DATA.translations[this.currentLang].modal_advantages;
+        document.getElementById("modal-faq-title").innerText = window.EL_ZAHRA_DATA.translations[this.currentLang].modal_faq;
 
         // Avantages
         advList.innerHTML = "";
@@ -334,7 +390,7 @@ window.EL_ZAHRA_APP = {
             overlay.classList.remove("active");
             this.prefillBooking(id);
         };
-        reserveBtn.innerText = this.currentLang === "ar" ? "حجز استشارة الآن" : "Réserver une consultation";
+        reserveBtn.innerText = window.EL_ZAHRA_DATA.translations[this.currentLang].btn_reserve;
 
         // Fermer le modal
         document.getElementById("modal-close-btn").onclick = () => {
@@ -378,7 +434,7 @@ window.EL_ZAHRA_APP = {
                 <div class="product-image-container">
                     <img src="${prod.img}" alt="${title}">
                     <span class="product-stock-badge ${inStock ? '' : 'out-of-stock'}">
-                        ${inStock ? (this.currentLang === 'ar' ? 'متوفر' : 'En Stock') : (this.currentLang === 'ar' ? 'نفذ' : 'Rupture')}
+                        ${inStock ? window.EL_ZAHRA_DATA.translations[this.currentLang].stock_in : window.EL_ZAHRA_DATA.translations[this.currentLang].stock_out}
                     </span>
                 </div>
                 <div class="product-body">
@@ -388,7 +444,7 @@ window.EL_ZAHRA_APP = {
                         ${convertedPrice}
                     </div>
                     <button class="btn-add-cart" ${inStock ? '' : 'disabled'} onclick="window.EL_ZAHRA_APP.addToCart('${prod.id}')">
-                        🛒 <span data-i18n="btn_add_cart">${this.currentLang === 'ar' ? 'إضافة إلى السلة' : 'Ajouter au Panier'}</span>
+                        🛒 <span data-i18n="btn_add_cart">${window.EL_ZAHRA_DATA.translations[this.currentLang].btn_add_cart}</span>
                     </button>
                 </div>
             `;
@@ -405,7 +461,12 @@ window.EL_ZAHRA_APP = {
         const productsDb = JSON.parse(localStorage.getItem("el_zahra_products") || "{}");
         const stockData = productsDb[id] || { stock: prod.stock };
         if (stockData.stock <= 0) {
-            alert(this.currentLang === "ar" ? "هذا المنتج نفذ من المخزن حالياً." : "Ce produit est en rupture de stock.");
+            const alerts = {
+                ar: "هذا المنتج نفذ من المخزن حالياً.",
+                fr: "Ce produit est en rupture de stock.",
+                en: "This product is currently out of stock."
+            };
+            alert(alerts[this.currentLang]);
             return;
         }
 
@@ -414,7 +475,12 @@ window.EL_ZAHRA_APP = {
             if (existingItem.qty < stockData.stock) {
                 existingItem.qty++;
             } else {
-                alert(this.currentLang === "ar" ? "لقد وصلت للحد الأقصى للمخزون المتوفر." : "Vous avez atteint la limite de stock disponible.");
+                const alerts = {
+                    ar: "لقد وصلت للحد الأقصى للمخزون المتوفر.",
+                    fr: "Vous avez atteint la limite de stock disponible.",
+                    en: "You have reached the limit of available stock."
+                };
+                alert(alerts[this.currentLang]);
                 return;
             }
         } else {
@@ -449,7 +515,12 @@ window.EL_ZAHRA_APP = {
         const stock = productsDb[id] ? productsDb[id].stock : 10;
 
         if (delta > 0 && item.qty >= stock) {
-            alert(this.currentLang === "ar" ? "المخزون غير كافٍ." : "Stock insuffisant.");
+            const alerts = {
+                ar: "المخزون غير كافٍ.",
+                fr: "Stock insuffisant.",
+                en: "Insufficient stock."
+            };
+            alert(alerts[this.currentLang]);
             return;
         }
 
@@ -511,7 +582,7 @@ window.EL_ZAHRA_APP = {
         container.innerHTML = "";
 
         if (this.cart.length === 0) {
-            container.innerHTML = `<p class="cart-empty-message" data-i18n="cart_empty">${this.currentLang === 'ar' ? 'سلة المشتriat فارغة حالياً.' : 'Votre panier est vide pour le moment.'}</p>`;
+            container.innerHTML = `<p class="cart-empty-message" data-i18n="cart_empty">${window.EL_ZAHRA_DATA.translations[this.currentLang].cart_empty}</p>`;
             document.getElementById("btn-checkout").style.display = "none";
             this.updateCartSummary(0);
             return;
@@ -527,13 +598,15 @@ window.EL_ZAHRA_APP = {
             itemRow.className = "cart-item";
             
             const formattedPrice = this.getFormattedPrice(item.priceDZD);
+            const dbProduct = window.EL_ZAHRA_DATA.products.find(p => p.id === item.id);
+            const title = dbProduct ? dbProduct.title[this.currentLang] : item.title;
 
             itemRow.innerHTML = `
                 <div class="cart-item-img">
-                    <img src="${item.img}" alt="${item.title}">
+                    <img src="${item.img}" alt="${title}">
                 </div>
                 <div class="cart-item-details">
-                    <h4>${item.title}</h4>
+                    <h4>${title}</h4>
                     <p>${formattedPrice}</p>
                 </div>
                 <div class="cart-item-qty">
@@ -732,14 +805,24 @@ window.EL_ZAHRA_APP = {
         const shippingType = document.getElementById("checkout-shipping-type").value;
 
         if (!name || !phone || !wilayaId || !address) {
-            alert(this.currentLang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Veuillez remplir tous les champs obligatoires.");
+            const alerts = {
+                ar: "يرجى ملء جميع الحقول المطلوبة.",
+                fr: "Veuillez remplir tous les champs obligatoires.",
+                en: "Please fill in all required fields."
+            };
+            alert(alerts[this.currentLang]);
             return;
         }
 
         // Validation du format du téléphone algérien
         const algerianPhoneRegex = /^(05|06|07)[0-9]{8}$/;
         if (phone.startsWith("0") && !algerianPhoneRegex.test(phone)) {
-            alert(this.currentLang === "ar" ? "رقم الهاتف غير صحيح. يجب أن يتكون من 10 أرقام ويبدأ بـ 05 أو 06 أو 07." : "Le numéro de téléphone est incorrect. Il doit comporter 10 chiffres et commencer par 05, 06 ou 07.");
+            const alerts = {
+                ar: "رقم الهاتف غير صحيح. يجب أن يتكون من 10 أرقام ويبدأ بـ 05 أو 06 أو 07.",
+                fr: "Le numéro de téléphone est incorrect. Il doit comporter 10 chiffres et commencer par 05, 06 ou 07.",
+                en: "Invalid phone number. Must be 10 digits and start with 05, 06, or 07."
+            };
+            alert(alerts[this.currentLang]);
             return;
         }
 
@@ -748,7 +831,12 @@ window.EL_ZAHRA_APP = {
             const cardNum = document.getElementById("satim-card-num-input").value;
             const cardName = document.getElementById("satim-card-name-input").value;
             if (!cardNum || !cardName) {
-                alert(this.currentLang === "ar" ? "يرجى ملء معلومات البطاقة." : "Veuillez remplir les informations de carte.");
+                const alerts = {
+                    ar: "يرجى ملء معلومات البطاقة.",
+                    fr: "Veuillez remplir les informations de carte.",
+                    en: "Please fill in the card details."
+                };
+                alert(alerts[this.currentLang]);
                 return;
             }
             
@@ -899,7 +987,7 @@ window.EL_ZAHRA_APP = {
             <div class="invoice-header-row">
                 <div class="invoice-clinic-details">
                     <h2>عيادة الزهراء - Clinique El-Zahra</h2>
-                    <p><strong>Dr. Hakima Betira</strong> | أخصائية أمراض النساء والخصوبة</p>
+                    <p><strong>Dr. Najiba Betira</strong> | ${lang === 'ar' ? 'أخصائية أمراض النساء والخصوبة' : (lang === 'en' ? 'Specialist in Gynecology & Fertility' : 'Spécialiste en Gynécologie & Fertilité')}</p>
                     <p>طريق تازولت بجانب مسجد عمر بن العاص، باتنة</p>
                     <p>Tél : 0665666960 / 0664795367</p>
                 </div>
@@ -984,7 +1072,12 @@ window.EL_ZAHRA_APP = {
         const timeSlot = document.getElementById("booking-time-slot").value;
 
         if (!name || !phone || !date || !motif) {
-            alert(this.currentLang === "ar" ? "يرجى ملء الفراغات الأساسية لحجز الموعد." : "Veuillez remplir tous les champs de réservation requis.");
+            const alerts = {
+                ar: "يرجى ملء الفراغات الأساسية لحجز الموعد.",
+                fr: "Veuillez remplir tous les champs de réservation requis.",
+                en: "Please fill in all required fields to book an appointment."
+            };
+            alert(alerts[this.currentLang]);
             return;
         }
 

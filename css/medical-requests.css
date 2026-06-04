@@ -1300,25 +1300,187 @@ body[dir="rtl"] .arm-field-label { text-transform: none; }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   RESPONSIVE
+   RESPONSIVE & MULTI-SCREEN OPTIMIZATION
    ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .mr-workflow-connector {
+        width: 20px;
+    }
+    
+    .mr-workflow-step {
+        padding: 10px 14px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .pp-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .pp-header-left {
+        text-align: center;
+    }
+    
+    .pp-timeline-wrapper {
+        padding: 20px 16px;
+    }
+}
+
 @media (max-width: 768px) {
-    .mr-form-grid { grid-template-columns: 1fr; }
-    .mr-form-body { padding: 28px 20px; }
-    .mr-form-header { padding: 30px 24px; }
-    .mr-treatment-grid { grid-template-columns: 1fr 1fr; }
-    .mr-workflow-bar { gap: 8px; }
-    .mr-workflow-connector { display: none; }
-    .pp-pay-selectors { grid-template-columns: 1fr; }
-    .pp-card-fields-grid { grid-template-columns: 1fr; }
-    .arm-body { grid-template-columns: 1fr; padding: 20px; }
-    .arm-section.full-width { grid-column: 1; }
-    .arm-grid-2 { grid-template-columns: 1fr; }
-    .arm-footer { flex-direction: column; }
-    .portal-login-box { padding: 30px 24px; }
-    #pp-timeline { min-width: 500px; }
+    /* Form grids and spacing */
+    .mr-form-grid { 
+        grid-template-columns: 1fr; 
+        gap: 16px;
+    }
+    
+    .mr-form-body { 
+        padding: 30px 20px; 
+    }
+    
+    .mr-form-header { 
+        padding: 30px 24px; 
+    }
+
+    .mr-form-header::after {
+        display: none !important; /* Hide massive icon on tablet/mobile */
+    }
+
+    /* Treatment Options dynamic layout */
+    .mr-treatment-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 10px;
+    }
+
+    .mr-treatment-card-inner {
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+    .mr-treatment-icon {
+        font-size: 1.3rem;
+    }
+
+    .mr-treatment-label {
+        font-size: 0.8rem;
+    }
+
+    /* Dropzone padding reduction */
+    .mr-dropzone {
+        padding: 24px 16px;
+    }
+
+    /* Compact Workflow Step Bar */
+    .mr-workflow-bar { 
+        gap: 10px; 
+        justify-content: center;
+    }
+    
+    .mr-workflow-connector { 
+        display: none !important; 
+    }
+
+    .mr-workflow-step {
+        padding: 12px 16px;
+        width: calc(50% - 10px);
+        text-align: left;
+    }
+
+    body[dir="rtl"] .mr-workflow-step {
+        text-align: right;
+    }
+
+    /* Portal & Admin Modals adaptivity */
+    .pp-pay-selectors { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .pp-card-fields-grid { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .arm-body { 
+        grid-template-columns: 1fr; 
+        padding: 20px; 
+    }
+    
+    .arm-section.full-width { 
+        grid-column: 1; 
+    }
+    
+    .arm-grid-2 { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .arm-footer { 
+        flex-direction: column; 
+        gap: 15px;
+        text-align: center;
+    }
+
+    .arm-footer button {
+        width: 100%;
+    }
+    
+    .portal-login-box { 
+        padding: 30px 24px; 
+    }
+    
+    #pp-timeline { 
+        min-width: 500px; 
+    }
+
+    .pp-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .pp-quote-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
 }
 
 @media (max-width: 480px) {
-    .mr-treatment-grid { grid-template-columns: 1fr; }
+    .mr-form-body {
+        padding: 24px 14px;
+    }
+
+    .mr-form-header {
+        padding: 24px 16px;
+    }
+
+    .mr-form-header h3 {
+        font-size: 1.5rem;
+    }
+
+    .mr-treatment-grid { 
+        grid-template-columns: 1fr; 
+    }
+
+    .mr-workflow-step {
+        width: 100%;
+    }
+
+    .pp-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pp-quote-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pp-quote-total {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .pp-quote-card {
+        padding: 20px 16px;
+    }
 }

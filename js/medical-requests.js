@@ -909,7 +909,7 @@ Pour payer et confirmer votre traitement,
 connectez-vous à votre espace patient sur notre site web.
 Votre référence: ${req.id}
 
-Clinique El-Zahra — Dr. Hakima Betira
+Clinique El-Zahra — Dr. Najiba Betira
 Route de Tazoult, Batna, Algérie
 Tél: +213 665 666 960
         `.trim();
